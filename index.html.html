@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cafe Crafter AI ☕</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--esp:#2C1810;--roast:#4a2010;--cara:#C8860A;--cream:#F5ECD7;--milk:#FAF6EE;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--esp);color:var(--cream);min-height:100vh;overflow-x:hidden;padding-bottom:80px}
+h1,h2{font-family:'Playfair Display',serif}
+
+/* BG */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 15% 20%,rgba(92,51,23,.5) 0%,transparent 55%),
+             radial-gradient(ellipse at 85% 80%,rgba(200,134,10,.12) 0%,transparent 50%)}
+
+/* TABS - Bottom Nav Bar */
+.tab-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  display:flex;gap:0;
+  background:rgba(20,8,2,.96);
+  border-top:1px solid rgba(200,134,10,.25);
+  padding:0;
+  padding-bottom:env(safe-area-inset-bottom);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.tab-btn{
+  flex:1;padding:10px 0 8px;border:none;background:transparent;
+  color:rgba(245,236,215,.4);
+  font-family:'Sarabun',sans-serif;font-size:10px;font-weight:500;
+  border-radius:0;cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  -webkit-tap-highlight-color:transparent;
+}
+.tab-btn .tab-icon{font-size:20px;line-height:1;transition:transform .2s}
+.tab-btn .tab-label{font-size:10px;line-height:1}
+.tab-btn.active{color:var(--cara)}
+.tab-btn.active .tab-icon{transform:translateY(-2px)}
+.tab-btn:not(.active):hover{color:var(--cream)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:rgba(74,32,16,.45);border:1px solid rgba(200,134,10,.22);border-radius:16px;backdrop-filter:blur(10px)}
+.card-sm{background:rgba(245,236,215,.06);border:1px solid rgba(245,236,215,.13);border-radius:12px}
+
+.btn{font-family:'Sarabun',sans-serif;border:none;border-radius:10px;cursor:pointer;transition:all .2s;font-weight:600;-webkit-tap-highlight-color:transparent;user-select:none}
+.btn-gold{background:var(--cara);color:#1a0800;padding:12px 22px;font-size:14px}
+.btn-gold:hover{background:#e09b15;transform:translateY(-1px)}
+.btn-gold:active{transform:scale(.97)}
+.btn-gold:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-outline{background:transparent;color:var(--cream);border:1px solid rgba(245,236,215,.3);padding:10px 18px;font-size:13px}
+.btn-outline:hover{border-color:var(--cara);color:var(--cara)}
+.btn-outline:active{transform:scale(.97)}
+
+/* STAT BARS */
+.sbar{height:5px;border-radius:3px;background:rgba(245,236,215,.13);overflow:hidden}
+.sbar-fill{height:100%;border-radius:3px;transition:width .7s ease}
+
+/* CUSTOMER ANIMATIONS */
+@keyframes walkIn{0%{opacity:0;transform:translateX(-80px) scale(.8)}60%{transform:translateX(6px) scale(1.02)}100%{opacity:1;transform:translateX(0) scale(1)}}
+@keyframes walkOut{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(80px) scale(.8)}}
+@keyframes bobble{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes happy{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes angry{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(-10px)}}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+@keyframes popIn{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes coinFly{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-50px) scale(.5)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+.walk-in{animation:walkIn .6s cubic-bezier(.34,1.56,.64,1) forwards}
+.walk-out{animation:walkOut .5s ease forwards}
+.bobble{animation:bobble 2s ease-in-out infinite}
+.toast-el{animation:slideUp .3s ease,fadeOut .4s ease 3.2s forwards}
+.pop-in{animation:popIn .4s cubic-bezier(.34,1.56,.64,1) forwards}
+.pulse-loop{animation:pulse 1.8s ease-in-out infinite}
+.coin-fly{animation:coinFly .7s ease forwards}
+.shake-it{animation:shake .35s ease}
+
+.loading-dots span{animation:blink 1.2s infinite;opacity:0}
+.loading-dots span:nth-child(2){animation-delay:.2s}
+.loading-dots span:nth-child(3){animation-delay:.4s}
+
+/* FLOOR GRID */
+.floor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:400px){.floor-grid{grid-template-columns:repeat(2,1fr)}}
+.table-slot{background:rgba(245,236,215,.04);border:1.5px dashed rgba(245,236,215,.12);border-radius:14px;min-height:120px;padding:10px;transition:all .3s;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.table-slot.occupied{border-color:rgba(200,134,10,.4);background:rgba(200,134,10,.07)}
+.table-slot.waiting{border-color:rgba(239,165,40,.6);animation:pulse 1.5s infinite}
+.table-slot.served{border-color:rgba(45,106,79,.5);background:rgba(45,106,79,.1)}
+
+/* CUSTOMER AVATAR */
+.cust-avatar{font-size:32px;line-height:1;margin-bottom:4px}
+.cust-name{font-size:11px;opacity:.7;text-align:center;margin-bottom:2px}
+.cust-order{font-size:10px;color:var(--cara);text-align:center}
+.patience-bar{width:100%;height:4px;background:rgba(245,236,215,.15);border-radius:2px;margin-top:6px;overflow:hidden}
+.patience-fill{height:100%;border-radius:2px;transition:width .5s linear}
+.speech-bubble{position:absolute;top:-2px;right:-2px;background:var(--cara);color:#1a0800;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap}
+
+/* FOOD GAME */
+.food-game-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:400px){.food-game-area{grid-template-columns:1fr;gap:10px}}
+.food-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.food-item{background:rgba(245,236,215,.06);border:2px solid rgba(245,236,215,.15);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;transition:all .2s;position:relative;-webkit-tap-highlight-color:transparent;user-select:none}
+.food-item:active{transform:scale(.96)}
+.food-item:hover{border-color:var(--cara);background:rgba(200,134,10,.1);transform:translateY(-2px)}
+.food-item.selected{border-color:var(--cara);background:rgba(200,134,10,.2);transform:scale(1.05)}
+.food-item.correct{border-color:#6fcf97;background:rgba(45,106,79,.25)}
+.food-item.wrong{border-color:#ff6b6b;background:rgba(192,57,43,.25)}
+.food-emoji{font-size:28px;display:block;margin-bottom:4px}
+.food-name{font-size:11px;opacity:.8}
+.food-price{font-size:11px;color:var(--cara);font-weight:600}
+
+.order-card{background:rgba(74,32,16,.6);border:1px solid rgba(200,134,10,.3);border-radius:14px;padding:14px;text-align:center}
+.order-table-emoji{font-size:40px;margin-bottom:6px;display:block}
+
+/* RESULT POPUP */
+.result-popup{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding-bottom:env(safe-area-inset-bottom)}
+.result-box{background:#3a1f0e;border:1px solid rgba(200,134,10,.4);border-radius:20px 20px 0 0;padding:1.75rem 1.5rem calc(1.75rem + env(safe-area-inset-bottom));width:100%;max-width:480px;animation:slideUpSheet .35s cubic-bezier(.34,1.4,.64,1) forwards;max-height:85vh;overflow-y:auto}
+.result-box.loss{border-color:rgba(192,57,43,.5);background:#2a0e0e}
+@keyframes slideUpSheet{from{transform:translateY(100%);opacity:.5}to{transform:translateY(0);opacity:1}}
+
+/* CHIPS */
+.chip-g{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(45,106,79,.25);color:#6fcf97;border:1px solid rgba(45,106,79,.4)}
+.chip-r{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(192,57,43,.2);color:#ff9999;border:1px solid rgba(192,57,43,.3)}
+.chip-y{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(200,134,10,.2);color:var(--cara);border:1px solid rgba(200,134,10,.3)}
+
+/* Active tab indicator */
+.tab-btn.active::before{
+  content:'';display:block;width:4px;height:4px;
+  background:var(--cara);border-radius:50%;
+  margin-bottom:1px;
+}
+.tab-btn:not(.active)::before{content:'';display:block;width:4px;height:4px;margin-bottom:1px;}
+/* Portion hint badge */
+.portion-hint-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(111,207,151,.15);border:1px solid rgba(111,207,151,.3);
+  color:#6fcf97;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;
+  margin-top:6px;
+}
+.combo-hint{
+  margin-top:6px;font-size:11px;color:#ffe08a;
+  background:rgba(200,134,10,.15);border:1px dashed rgba(200,134,10,.4);
+  border-radius:10px;padding:4px 10px;display:inline-block;
+}
+.size-badge{
+  position:absolute;top:4px;right:4px;
+  font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;
+  background:rgba(200,134,10,.3);color:var(--cara);
+}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(200,134,10,.35);border-radius:2px}
+
+/* TOAST */
+#toast-area{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:360px;align-items:center}
+.divider{border-top:1px dashed rgba(200,134,10,.18);margin:10px 0}
+
+input[type=text]{font-family:'Sarabun',sans-serif;background:rgba(245,236,215,.08);border:1px solid rgba(245,236,215,.2);color:var(--cream);border-radius:8px;padding:7px 12px;font-size:13px;width:100%}
+input[type=text]:focus{outline:none;border-color:var(--cara)}
+</style>
+</head>
+<body>
+<div class="relative z-10 max-w-3xl mx-auto px-4 pt-5 pb-10">
+
+  <!-- HEADER -->
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h1 class="text-2xl font-black" style="color:var(--cara)">☕ Cafe Crafter AI</h1>
+      <p class="text-xs opacity-40 mt-0.5">เกมบริหารร้านกาแฟ</p>
+    </div>
+    <div class="text-right">
+      <div class="text-xl font-black" id="hd-money" style="color:var(--cara)">฿2,500</div>
+      <div class="text-xs opacity-40">วันที่ <span id="hd-day">1</span></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="card p-3 mb-4">
+    <div class="grid grid-cols-3 gap-4">
+      <div><div class="flex justify-between text-xs opacity-50 mb-1"><span>ชื่อเสียง</span><span id="sv-rep">50</span></div><div class="sbar"><div class="sbar-fill" id="sb-rep" style="width:50%;background:var(--cara)"></div></div></div>
+      <div><div class="flex justify-between text-xs opacity-50 mb-1"><span>วัตถุดิบ</span><span id="sv-sup">80</span></div><div class="sbar"><div class="sbar-fill" id="sb-sup" style="width:80%;background:#7B68EE"></div></div></div>
+      <div><div class="flex justify-between text-xs opacity-50 mb-1"><span>กำไรวันนี้</span><span id="sv-profit" style="color:#6fcf97">฿0</span></div><div class="sbar"><div class="sbar-fill" id="sb-profit" style="width:0%;background:#6fcf97"></div></div></div>
+    </div>
+  </div>
+
+  <!-- TAB BAR (Bottom Nav) -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('floor')">
+      <span class="tab-icon">🏪</span>
+      <span class="tab-label">หน้าร้าน</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('food')">
+      <span class="tab-icon">🍽️</span>
+      <span class="tab-label">จัดเมนู</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('finance')">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">การเงิน</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('ai')">
+      <span class="tab-icon">🤖</span>
+      <span class="tab-label">AI</span>
+    </button>
+  </div>
+
+  <!-- ══════════════ TAB 1: FLOOR ══════════════ -->
+  <div id="tab-floor" class="tab-panel active">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold" style="color:var(--cara)">🏪 หน้าร้าน</h2>
+      <div class="flex gap-2">
+        <button class="btn btn-outline text-xs" onclick="openDoor()">📢 เปิดร้านรับลูกค้า</button>
+        <button class="btn btn-gold text-xs" onclick="serveAll()">☕ เสิร์ฟทุกโต๊ะ</button>
+      </div>
+    </div>
+
+    <!-- FLOOR GRID -->
+    <div class="floor-grid mb-4" id="floor-grid"></div>
+
+    <!-- QUEUE -->
+    <div class="card p-3 mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs opacity-50">คิวรอเข้าร้าน</span>
+        <span id="queue-count" class="chip-y">0 คน</span>
+      </div>
+      <div id="queue-area" class="flex gap-2 flex-wrap min-h-[36px]">
+        <span class="text-xs opacity-30">ว่างอยู่...</span>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="card p-3">
+      <div class="text-xs opacity-40 mb-2">บันทึกกิจกรรม</div>
+      <div id="floor-log" class="space-y-0.5" style="max-height:120px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB 2: FOOD GAME ══════════════ -->
+  <div id="tab-food" class="tab-panel">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold" style="color:var(--cara)">🍽️ จัดเมนูให้ถูกใจ</h2>
+      <div class="flex gap-2 items-center">
+        <span class="text-xs opacity-50">คะแนน:</span>
+        <span id="food-score" class="text-lg font-black" style="color:var(--cara)">0</span>
+      </div>
+    </div>
+    <p class="text-xs opacity-50 mb-4">เลือกเครื่องดื่ม + อาหารให้ตรงกับที่ลูกค้าต้องการ — ถูก = กำไร ผิด = ขาดทุน!</p>
+
+    <!-- ORDER DISPLAY -->
+    <div id="food-order-area" class="mb-4"></div>
+
+    <!-- FOOD SELECTOR -->
+    <div class="food-game-area mb-4">
+      <div>
+        <p class="text-xs opacity-50 mb-2">🥤 เลือกเครื่องดื่ม</p>
+        <div class="food-grid" id="drink-grid"></div>
+      </div>
+      <div>
+        <p class="text-xs opacity-50 mb-2">🍴 เลือกอาหาร</p>
+        <div class="food-grid" id="food-grid-items"></div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="flex gap-3 items-center">
+      <button class="btn btn-gold flex-1" id="food-submit-btn" onclick="submitOrder()" disabled>✅ ยืนยันออเดอร์</button>
+      <button class="btn btn-outline" onclick="skipOrder()">⏭️ ข้าม (-฿50)</button>
+      <button class="btn btn-outline" onclick="newFoodRound()">🔄 ลูกค้าใหม่</button>
+    </div>
+
+    <!-- SELECTED DISPLAY -->
+    <div class="card-sm p-3 mt-3 flex gap-4">
+      <div class="flex-1 text-center">
+        <div class="text-xs opacity-40 mb-1">เลือกไว้:</div>
+        <div id="sel-drink" class="text-2xl">—</div>
+        <div id="sel-drink-name" class="text-xs opacity-60"></div>
+      </div>
+      <div class="w-px" style="background:rgba(245,236,215,.1)"></div>
+      <div class="flex-1 text-center">
+        <div class="text-xs opacity-40 mb-1">เลือกไว้:</div>
+        <div id="sel-food" class="text-2xl">—</div>
+        <div id="sel-food-name" class="text-xs opacity-60"></div>
+      </div>
+    </div>
+
+    <!-- COMBO GUIDE -->
+    <div class="card-sm p-3 mt-3">
+      <div class="text-xs font-bold mb-2" style="color:var(--cara)">🌟 Combo โบนัส — จับคู่ให้ถูกรับเพิ่ม!</div>
+      <div id="combo-guide" class="grid grid-cols-2 gap-1.5"></div>
+      <div class="divider"></div>
+      <div class="text-xs opacity-50">💡 ปริมาณตรงใจลูกค้า = รับโบนัสพิเศษอีก! ดูจาก hint เช่น 🍴หิวมาก หรือ 🌿กินน้อย</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB 3: FINANCE ══════════════ -->
+  <div id="tab-finance" class="tab-panel">
+    <h2 class="text-lg font-bold mb-3" style="color:var(--cara)">📊 การเงิน</h2>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="card-sm p-4 text-center"><div class="text-xs opacity-40 mb-1">เงินสด</div><div class="text-2xl font-black" style="color:var(--cara)">฿<span id="fi-money">2500</span></div></div>
+      <div class="card-sm p-4 text-center"><div class="text-xs opacity-40 mb-1">กำไรวันนี้</div><div class="text-2xl font-black" id="fi-profit-display">฿<span id="fi-profit">0</span></div></div>
+      <div class="card-sm p-4 text-center"><div class="text-xs opacity-40 mb-1">ลูกค้าวันนี้</div><div class="text-2xl font-black" style="color:#F39C12"><span id="fi-custs">0</span> คน</div></div>
+      <div class="card-sm p-4 text-center"><div class="text-xs opacity-40 mb-1">ออเดอร์ถูก/ผิด</div><div class="text-2xl font-black"><span id="fi-correct" style="color:#6fcf97">0</span>/<span id="fi-wrong" style="color:#ff6b6b">0</span></div></div>
+    </div>
+    <div class="card p-4 mb-3">
+      <div class="text-sm font-bold mb-2" style="color:var(--cara)">ค่าใช้จ่ายคงที่/วัน</div>
+      <div class="flex justify-between text-xs mb-1"><span class="opacity-50">ค่าเช่า</span><span style="color:#ffaaaa">฿300</span></div>
+      <div class="flex justify-between text-xs mb-1"><span class="opacity-50">เงินเดือนพนักงาน</span><span style="color:#ffaaaa">฿200</span></div>
+      <div class="flex justify-between text-xs mb-1"><span class="opacity-50">ค่าน้ำ-ไฟ</span><span style="color:#ffaaaa">฿100</span></div>
+      <div class="divider"></div>
+      <div class="flex justify-between text-xs font-bold"><span class="opacity-60">รวม</span><span style="color:#ff9999">฿600/วัน</span></div>
+    </div>
+    <button class="btn btn-gold w-full" onclick="endDay()">🌙 สิ้นสุดวัน (หักค่าคงที่ ฿600)</button>
+  </div>
+
+  <!-- ══════════════ TAB 4: AI ══════════════ -->
+  <div id="tab-ai" class="tab-panel">
+    <h2 class="text-lg font-bold mb-3" style="color:var(--cara)">🤖 AI ผู้ช่วย</h2>
+    <div class="card p-4 mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-bold" style="color:var(--cara)">⚡ สุ่มเหตุการณ์ AI</span>
+        <button class="btn btn-outline text-xs" id="ev-btn" onclick="triggerEvent()">✨ สุ่ม</button>
+      </div>
+      <div id="ev-box" class="text-xs leading-relaxed opacity-60" style="min-height:50px">กดสุ่มเหตุการณ์ได้เลยครับ...</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-sm font-bold mb-2" style="color:var(--cara)">💬 ถามที่ปรึกษา</div>
+      <div class="flex gap-2 mb-2">
+        <input type="text" id="ai-q" placeholder="เช่น ควรเพิ่มเมนูอะไร?" onkeydown="if(event.key==='Enter')askAI()">
+        <button class="btn btn-gold px-3 text-sm" onclick="askAI()">ถาม</button>
+      </div>
+      <div id="ai-out" class="text-xs leading-relaxed opacity-60" style="min-height:40px">ถามได้เลยครับ</div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<!-- TOAST -->
+<div id="toast-area"></div>
+
+<!-- RESULT POPUP -->
+<div id="result-popup" class="result-popup hidden">
+  <div id="result-box" class="result-box">
+    <div id="result-icon" style="font-size:52px;text-align:center;margin-bottom:8px"></div>
+    <h2 id="result-title" class="text-xl font-black text-center mb-2" style="color:var(--cara)"></h2>
+    <p id="result-body" class="text-sm opacity-75 text-center mb-4 leading-relaxed"></p>
+    <button class="btn btn-gold w-full" onclick="closeResult()">ต่อไป →</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════
+// STATE
+// ══════════════════════════════
+let G = {
+  money: 2500, day: 1, rep: 50, supply: 80,
+  income: 0, expenses: 0, custsServed: 0,
+  correctOrders: 0, wrongOrders: 0,
+  tables: [], queue: [],
+  foodSelected: null, drinkSelected: null,
+  currentFoodOrder: null, foodScore: 0,
+};
+
+// ══════════════════════════════
+// DATA
+// ══════════════════════════════
+const CUST_TYPES = [
+  { name:'พนักงานออฟฟิศ', emoji:'👔', group:'single', wantDrink:'coffee', wantFood:'light', patience:18, tip:20,
+    arrive:['ประชุม 5 นาทีหลังนี้ รีบด้วยนะ! 😤','ถ้าไม่ได้กาแฟ จะไม่รับผิดชอบ','เจ้านายบอกให้มาพัก แต่ฉันยังเช็กเมลอยู่ 💻'],
+    happy:['กาแฟนี้ช่วยชีวิตฉันไว้เลย! 🙏','บิลขอได้เลย เบิกบริษัทได้นะ 😏','กลับไปสู้ต่อ! ขอบคุณ 💪'],
+    angry:['รอมาครึ่งชั่วโมง เจ้านายก็ยังไม่ทำให้รอนานขนาดนี้!','ขอ WiFi password ก็ยังดี 😠','ลาออกดีกว่า ทั้งงานทั้งร้านกาแฟ 😤'] },
+  { name:'นักศึกษา', emoji:'🎓', group:'single', wantDrink:'cold', wantFood:'snack', patience:22, tip:10,
+    arrive:['นั่งได้ทั้งวันไหมครับ? สั่งชาเดียวนะ 😅','มีปลั๊กไฟไหม? battery จะหมดแล้ว','โปรโมชั่นอะไรได้บ้าง? ตังค์หมดแล้ว'],
+    happy:['อร่อยมาก! ขอถ่ายลง IG ก่อนนะ 📱','ถ้าทำวิทยานิพนธ์เสร็จ จะมาฉลองที่นี่!','ลง Google Maps 5 ดาวให้เลย ⭐⭐⭐⭐⭐'],
+    angry:['รอนานจนการบ้านหมดแล้ว...','เพื่อนบอกว่าที่นี่ดี เพื่อนโกหก 😭','เงินหมดแล้ว โทษกาแฟแพงนะ!'] },
+  { name:'คู่รัก', emoji:'👫', group:'couple', wantDrink:'coffee', wantFood:'cake', patience:25, tip:30,
+    arrive:['วันนี้ครบรอบ ต้องพิเศษนะ! 💕','แฟนบอกว่าที่นี่โรแมนติก... ต้องเป็นแบบนั้นนะ','ขอโต๊ะมุมสวยๆ ถ่ายรูปด้วยนะคะ 📸'],
+    happy:['น่ารักมาก! แฟนชอบมากเลย 💖','ขอบคุณที่ทำให้วันนี้พิเศษ!','มาอีกแน่นอน ครั้งหน้าเอาแม่มาแนะนำด้วย 😂'],
+    angry:['โต๊ะข้างๆ ได้ก่อนเราเลย ไม่แฟร์!','แฟนงอนแล้ว ต้องรับผิดชอบนะ 😤','ถ้ารอนานกว่านี้ ฉันจะพาเขาไปที่อื่น'] },
+  { name:'เพื่อนสองคน', emoji:'👯', group:'couple', wantDrink:'cold', wantFood:'snack', patience:20, tip:15,
+    arrive:['เพิ่งเลิกงาน มาระบายให้หน่อยนะ 😅','ใครจ่ายก็ได้ เดี๋ยวเถียงกันเอง 😂','ขอเสียงเพลงดังขึ้นหน่อยได้ไหม?'],
+    happy:['คุ้มมาก! มาใหม่แน่นอน 🎉','เพื่อนบอกว่าอร่อย ก็จริงด้วย 😂','แบ่งกันจ่ายแล้วก็ยังคุ้ม!'],
+    angry:['รอนานจน gossip หมดแล้ว!','เพื่อนฉันหิวมากแล้วนะ 😤','ถ้าช้ากว่านี้ จะไปกินมาม่าแทน 🍜'] },
+  { name:'บล็อกเกอร์', emoji:'📸', group:'single', wantDrink:'special', wantFood:'cake', patience:28, tip:25,
+    arrive:['ขอแสงดีๆ หน่อยนะ กำลังถ่ายอยู่ 🎬','ถ้าสวยพอ จะลง Reels ให้เลย!','มีเมนู Signature อะไรบ้าง? ต้องพิเศษนะ'],
+    happy:['Aesthetic มากเลย! 😍 ลงแล้ว','คนกด Like เยอะมาก! ร้านดังแน่นอน ✨','Tag ร้านให้เลยนะ ฟอลเยอะอยู่!'],
+    angry:['แสงไม่ดีเลย รูปถ่ายไม่ออก 😒','จานไม่สวย ไม่ instagrammable เลย','รีวิวแย่ๆ กำลังพิมพ์อยู่นะ 💀'] },
+  { name:'ครอบครัว', emoji:'👨‍👩‍👧', group:'couple', wantDrink:'cold', wantFood:'heavy', patience:30, tip:40,
+    arrive:['ลูกงอแงมาตลอดทาง ขอรีบนะ 😅','มีเก้าอี้เด็กไหม? ลูกตกบ่อยมาก','สั่งอะไรก็ได้ ขอแค่ลูกหยุดร้องไห้ 😭'],
+    happy:['ลูกชอบมาก! กินหมดเลย 🥰','ขอบคุณที่อดทนกับเด็กเราด้วยนะ 🙏','ครั้งหน้าเอาปู่ย่ามาด้วย มา 10 คนเลย!'],
+    angry:['รอนานเกินไป ลูกเริ่มวิ่งวนร้านแล้ว 😨','ลูกหกใส่โต๊ะข้างๆ แล้ว... ขอโทษ','ช้ากว่านี้ เด็กจะกินเมนูของร้านเอง!'] },
+  { name:'นักท่องเที่ยว', emoji:'🧳', group:'single', wantDrink:'special', wantFood:'light', patience:24, tip:35,
+    arrive:['Sawadee krab! ขอ... กา-แฟ? 😅','มี menu ภาษาอังกฤษไหม? รูปก็ได้','แนะนำเมนูที่ "ไทยๆ" ที่สุดหน่อย!'],
+    happy:['Amazing! Best coffee in Thailand! 🇹🇭','ขอบคุณ! Very delicious มาก 🙏','จะบอก TripAdvisor ว่าที่นี่ดีมากก!'],
+    angry:['ฉันไม่เข้าใจเมนูเลย... 😵','Google Maps บอกว่าดี แต่รอนานมาก','ในญี่ปุ่นไม่รอนานขนาดนี้! 😤'] },
+];
+
+const DRINKS = [
+  { id:'esp', name:'เอสเปรสโซ่', emoji:'☕', cat:'coffee', size:'S', price:65, cost:18 },
+  { id:'lat', name:'คาเฟ่ลาเต้', emoji:'🥛', cat:'coffee', size:'M', price:90, cost:28 },
+  { id:'mat', name:'มัทฉะลาเต้', emoji:'🍵', cat:'special', size:'M', price:95, cost:32 },
+  { id:'ice', name:'ชาเย็น', emoji:'🧊', cat:'cold', size:'L', price:55, cost:14 },
+  { id:'smo', name:'สมูทตี้', emoji:'🥤', cat:'cold', size:'L', price:75, cost:22 },
+  { id:'cho', name:'ช็อคโกแลตร้อน', emoji:'🍫', cat:'special', size:'M', price:85, cost:25 },
+];
+
+const FOODS = [
+  { id:'cro', name:'ครัวซองต์', emoji:'🥐', cat:'light', portion:'S', price:65, cost:22 },
+  { id:'cak', name:'เค้กชิ้น', emoji:'🍰', cat:'cake', portion:'M', price:85, cost:28 },
+  { id:'san', name:'แซนวิช', emoji:'🥪', cat:'heavy', portion:'L', price:72, cost:24 },
+  { id:'mac', name:'มาการอง', emoji:'🍬', cat:'snack', portion:'S', price:55, cost:15 },
+  { id:'pan', name:'แพนเค้ก', emoji:'🥞', cat:'heavy', portion:'L', price:80, cost:26 },
+  { id:'waf', name:'วาฟเฟิล', emoji:'🧇', cat:'cake', portion:'M', price:78, cost:24 },
+];
+
+// Portion hint profiles — each maps to a wantPortion level
+const PORTION_PROFILES = [
+  { id:'hungry',   label:'🍴 หิวมาก',      hint:'ต้องการอาหารจุก!',   wantPortion:'L', wantDrink:'L', bonus:60 },
+  { id:'normal',   label:'😊 หิวปกติ',     hint:'กินได้ทั้งนั้น',       wantPortion:'M', wantDrink:'M', bonus:30 },
+  { id:'light',    label:'🌿 กินน้อย',      hint:'แค่เบาๆ พอนะ',      wantPortion:'S', wantDrink:'S', bonus:30 },
+  { id:'sweet',    label:'🍰 อยากของหวาน', hint:'ขอหวานๆ สักชิ้น',    wantPortion:'M', wantDrink:'S', bonus:40 },
+  { id:'thirsty',  label:'💧 กระหายน้ำ',   hint:'ขอดื่มเยอะๆ หน่อย',  wantPortion:'S', wantDrink:'L', bonus:40 },
+];
+
+// Combo pairs: drinkCat + foodCat → bonus label + extra bonus
+const COMBOS = [
+  { drinkCat:'coffee', foodCat:'light',  label:'☕🥐 Morning Set',   bonus:50 },
+  { drinkCat:'coffee', foodCat:'cake',   label:'☕🍰 Sweet Pairing', bonus:45 },
+  { drinkCat:'cold',   foodCat:'snack',  label:'🧊🍬 Chill Snack',   bonus:40 },
+  { drinkCat:'cold',   foodCat:'heavy',  label:'🥤🥞 Full Meal',     bonus:55 },
+  { drinkCat:'special',foodCat:'cake',   label:'✨🍰 Signature Set', bonus:70 },
+  { drinkCat:'special',foodCat:'light',  label:'✨🥐 Light Fancy',   bonus:45 },
+];
+
+const TABLES = 6;
+
+// ══════════════════════════════
+// INIT
+// ══════════════════════════════
+function init() {
+  G.tables = Array.from({length:TABLES}, (_,i) => ({ id:i, customer:null, state:'empty' }));
+  renderFloor();
+  renderFoodGame();
+  renderComboGuide();
+  updateUI();
+  log('ยินดีต้อนรับ! กด "เปิดร้านรับลูกค้า" เพื่อเริ่ม ☕', 'gold');
+  setInterval(tickPatience, 1000);
+}
+
+function renderComboGuide() {
+  const el = document.getElementById('combo-guide');
+  if(!el) return;
+  el.innerHTML = COMBOS.map(c=>`
+    <div style="background:rgba(200,134,10,.08);border:1px solid rgba(200,134,10,.2);border-radius:8px;padding:5px 8px;font-size:11px;">
+      <span style="color:#ffe08a">${c.label}</span>
+      <span style="color:var(--cara);font-weight:700;float:right">+฿${c.bonus}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════
+// UI HELPERS
+// ══════════════════════════════
+function updateUI() {
+  const profit = G.income - G.expenses;
+  document.getElementById('hd-money').textContent = '฿' + G.money.toLocaleString();
+  document.getElementById('hd-day').textContent = G.day;
+  document.getElementById('sv-rep').textContent = Math.round(G.rep);
+  document.getElementById('sb-rep').style.width = G.rep + '%';
+  document.getElementById('sv-sup').textContent = Math.round(G.supply);
+  document.getElementById('sb-sup').style.width = G.supply + '%';
+  document.getElementById('sv-profit').textContent = (profit>=0?'+':'') + '฿' + profit;
+  document.getElementById('sv-profit').style.color = profit >= 0 ? '#6fcf97' : '#ff6b6b';
+  document.getElementById('sb-profit').style.width = Math.min(Math.abs(profit)/20, 100) + '%';
+  document.getElementById('sb-profit').style.background = profit >= 0 ? '#6fcf97' : '#ff6b6b';
+  document.getElementById('fi-money').textContent = G.money.toLocaleString();
+  document.getElementById('fi-profit').textContent = (profit>=0?'+':'') + profit.toLocaleString();
+  document.getElementById('fi-profit-display').style.color = profit>=0?'#6fcf97':'#ff6b6b';
+  document.getElementById('fi-custs').textContent = G.custsServed;
+  document.getElementById('fi-correct').textContent = G.correctOrders;
+  document.getElementById('fi-wrong').textContent = G.wrongOrders;
+  document.getElementById('food-score').textContent = G.foodScore;
+  // Money color
+  const mb = document.getElementById('hd-money');
+  mb.style.color = G.money<500?'#ff6b6b':G.money<1200?'#ffaa55':'var(--cara)';
+}
+
+function log(msg, type='info') {
+  const area = document.getElementById('floor-log');
+  const el = document.createElement('div');
+  const sty = {info:'opacity-50',good:'',bad:'',gold:''};
+  const css = {good:'color:#6fcf97',bad:'color:#ff6b6b',gold:'color:var(--cara)',info:''};
+  el.className = 'text-xs ' + (sty[type]||'opacity-50');
+  if(css[type]) el.style.cssText = css[type];
+  const t = new Date().toLocaleTimeString('th',{hour:'2-digit',minute:'2-digit'});
+  el.textContent = `[${t}] ${msg}`;
+  area.insertBefore(el, area.firstChild);
+  if(area.children.length > 30) area.removeChild(area.lastChild);
+}
+
+function toast(msg, type='info') {
+  const area = document.getElementById('toast-area');
+  const el = document.createElement('div');
+  const bg = {good:'rgba(45,106,79,.92)',bad:'rgba(170,30,30,.92)',gold:'rgba(160,100,0,.92)',info:'rgba(50,30,15,.92)'};
+  el.className = 'toast-el text-sm px-4 py-2.5 rounded-xl font-medium';
+  el.style.cssText = `background:${bg[type]||bg.info};color:${type==='gold'?'#ffe08a':'white'};`;
+  el.textContent = msg;
+  area.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function showResult(icon, title, body, isLoss=false) {
+  document.getElementById('result-icon').textContent = icon;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-body').textContent = body;
+  document.getElementById('result-box').className = 'result-box' + (isLoss?' loss':'');
+  document.getElementById('result-popup').classList.remove('hidden');
+}
+function closeResult() {
+  document.getElementById('result-popup').classList.add('hidden');
+  newFoodRound();
+}
+
+// ══════════════════════════════
+// TAB SWITCH
+// ══════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['floor','food','finance','ai'][i]===tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ══════════════════════════════
+// FLOOR: TABLES
+// ══════════════════════════════
+function renderFloor() {
+  const grid = document.getElementById('floor-grid');
+  grid.innerHTML = '';
+  G.tables.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'table-slot' + (t.state==='empty'?'':t.state==='occupied'?' occupied':t.state==='waiting'?' waiting':' served');
+    el.id = 'table-' + i;
+    if(t.customer) {
+      const c = t.customer;
+      const pct = (c.patienceLeft / c.patience) * 100;
+      const pColor = pct > 60 ? '#6fcf97' : pct > 30 ? '#F39C12' : '#ff6b6b';
+      const groupEmoji = c.group === 'couple' ? c.emoji + (c.emoji2||'') : c.emoji;
+      // Pick dialogue: waiting = angry hint, occupied = arrive quote
+      const dialogue = t.state==='waiting'
+        ? (pct < 40 ? c.angry?.[Math.floor(Math.random()*c.angry.length)] : '⏰ รอนานมากแล้ว!')
+        : c.arrive?.[c.arriveIdx||0] || '';
+      el.innerHTML = `
+        <div class="cust-avatar walk-in">${groupEmoji}</div>
+        <div class="cust-name">${c.name}</div>
+        <div class="cust-order">สั่ง: ${c.orderDrink?.emoji||'?'}${c.orderFood?.emoji||'?'}</div>
+        ${dialogue ? `<div style="font-size:10px;color:rgba(245,236,215,.7);text-align:center;margin-top:4px;line-height:1.3;font-style:italic">"${dialogue}"</div>` : ''}
+        <div class="patience-bar" style="margin-top:5px"><div class="patience-fill" style="width:${pct}%;background:${pColor}"></div></div>
+        ${t.state==='waiting'?`<div class="speech-bubble" style="cursor:pointer">กดเสิร์ฟ!</div>`:''}
+      `;
+      if(t.state==='waiting') {
+        el.style.cursor='pointer';
+        el.onclick = () => serveTable(i);
+      }
+    } else {
+      el.innerHTML = `<div style="font-size:28px;opacity:.2">🪑</div><div class="text-xs opacity-20 mt-1">โต๊ะว่าง</div>`;
+    }
+    grid.appendChild(el);
+  });
+  // Queue
+  const qArea = document.getElementById('queue-area');
+  if(G.queue.length === 0) {
+    qArea.innerHTML = '<span class="text-xs opacity-30">ว่างอยู่...</span>';
+  } else {
+    qArea.innerHTML = G.queue.map(c => `<span class="text-xl bobble" title="${c.name}">${c.group==='couple'?c.emoji+c.emoji2:c.emoji}</span>`).join('');
+  }
+  document.getElementById('queue-count').textContent = G.queue.length + ' คน';
+}
+
+function openDoor() {
+  if(G.supply < 10) { toast('วัตถุดิบหมด! สั่งเพิ่มก่อนนะ', 'bad'); return; }
+  // Spawn 2-4 customers
+  const n = Math.floor(Math.random()*3) + 2 + (G.rep>70?1:0);
+  for(let i=0; i<n; i++) {
+    const ct = CUST_TYPES[Math.floor(Math.random()*CUST_TYPES.length)];
+    const drink = DRINKS.filter(d=>d.cat===ct.wantDrink)[0] || DRINKS[Math.floor(Math.random()*DRINKS.length)];
+    const food = FOODS.filter(f=>f.cat===ct.wantFood)[0] || FOODS[Math.floor(Math.random()*FOODS.length)];
+    const c = {
+      ...ct,
+      emoji2: ct.group==='couple' ? CUST_TYPES[Math.floor(Math.random()*CUST_TYPES.length)].emoji : null,
+      patienceLeft: ct.patience,
+      orderDrink: drink,
+      orderFood: food,
+      arriveIdx: Math.floor(Math.random()*(ct.arrive?.length||1)),
+      id: Date.now()+i
+    };
+    // Try seat them
+    const emptyTable = G.tables.find(t=>t.state==='empty');
+    if(emptyTable) {
+      emptyTable.customer = c;
+      emptyTable.state = 'occupied';
+      setTimeout(() => {
+        if(emptyTable.state==='occupied') { emptyTable.state='waiting'; renderFloor(); }
+      }, 3000);
+    } else {
+      G.queue.push(c);
+    }
+  }
+  G.supply -= 5;
+  log(`ลูกค้าเข้าร้าน ${n} กลุ่ม`, 'gold');
+  toast(`📢 ลูกค้าเข้า ${n} กลุ่ม!`, 'gold');
+  renderFloor(); updateUI();
+}
+
+function serveTable(idx) {
+  const table = G.tables[idx];
+  if(!table.customer) return;
+  const c = table.customer;
+  const price = c.orderDrink.price + c.orderFood.price + (c.group==='couple'?c.orderDrink.price*0.8:0);
+  const cost = c.orderDrink.cost + c.orderFood.cost;
+  const pct = c.patienceLeft / c.patience;
+  const bonus = pct > 0.7 ? c.tip : pct > 0.4 ? Math.round(c.tip*0.5) : 0;
+  const earned = Math.round(price + bonus - cost);
+
+  G.income += Math.round(price + bonus);
+  G.expenses += cost;
+  G.money += earned;
+  G.custsServed++;
+  G.supply -= 3;
+  G.rep = Math.min(100, G.rep + (pct>0.5?1:-1));
+
+  const happyLine = c.happy?.[Math.floor(Math.random()*c.happy.length)] || '';
+  const angryLine = c.angry?.[Math.floor(Math.random()*c.angry.length)] || '';
+  const dialogue = earned > 0 ? happyLine : angryLine;
+  const msg = earned > 0 ? `+฿${earned} (${c.name})` : `ขาดทุน ฿${Math.abs(earned)}`;
+  log(`${c.emoji} ${c.name}: "${dialogue}" → ${msg}`, earned>0?'good':'bad');
+  toast(earned>0?`${c.emoji} "${dialogue}"`:`${c.emoji} "${dialogue}"`, earned>0?'good':'bad');
+
+  // Clear table + seat queue
+  table.customer = null; table.state = 'empty';
+  if(G.queue.length > 0) {
+    const next = G.queue.shift();
+    table.customer = next; table.state = 'occupied';
+    setTimeout(() => { if(table.state==='occupied'){table.state='waiting';renderFloor();} }, 2500);
+  }
+  renderFloor(); updateUI();
+}
+
+function serveAll() {
+  const waiting = G.tables.filter(t=>t.state==='waiting'||t.state==='occupied');
+  if(waiting.length === 0) { toast('ไม่มีลูกค้าที่รอเสิร์ฟ', 'bad'); return; }
+  waiting.forEach(t=>serveTable(t.id));
+}
+
+function tickPatience() {
+  let changed = false;
+  G.tables.forEach(t => {
+    if(t.customer && t.state !== 'empty') {
+      t.customer.patienceLeft = Math.max(0, t.customer.patienceLeft - 1);
+      if(t.customer.patienceLeft === 0) {
+        // Customer leaves angry
+        const angryLine = t.customer.angry?.[Math.floor(Math.random()*t.customer.angry.length)] || 'รอนานเกินไป!';
+        log(`💔 ${t.customer.emoji} ${t.customer.name}: "${angryLine}" — เดินออก!`, 'bad');
+        toast(`${t.customer.emoji} "${angryLine}"`, 'bad');
+        G.rep = Math.max(0, G.rep - 3);
+        t.customer = null; t.state = 'empty';
+        if(G.queue.length>0){const next=G.queue.shift();t.customer=next;t.state='occupied';setTimeout(()=>{if(t.state==='occupied'){t.state='waiting';renderFloor();}},2500);}
+        changed = true; updateUI();
+      }
+    }
+  });
+  if(changed) renderFloor();
+  else {
+    // Lightweight update of patience bars
+    G.tables.forEach((t,i) => {
+      if(t.customer) {
+        const slot = document.getElementById('table-'+i);
+        if(slot) {
+          const pct=(t.customer.patienceLeft/t.customer.patience)*100;
+          const fill=slot.querySelector('.patience-fill');
+          if(fill){fill.style.width=pct+'%';fill.style.background=pct>60?'#6fcf97':pct>30?'#F39C12':'#ff6b6b';}
+        }
+      }
+    });
+  }
+}
+
+// ══════════════════════════════
+// FOOD GAME
+// ══════════════════════════════
+function renderFoodGame() {
+  const dg = document.getElementById('drink-grid');
+  dg.innerHTML = '';
+  DRINKS.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'food-item'; el.id = 'drink-'+d.id;
+    el.innerHTML = `<span class="size-badge">${d.size}</span><span class="food-emoji">${d.emoji}</span><div class="food-name">${d.name}</div><div class="food-price">฿${d.price}</div>`;
+    el.onclick = () => selectDrink(d);
+    dg.appendChild(el);
+  });
+  const fg = document.getElementById('food-grid-items');
+  fg.innerHTML = '';
+  FOODS.forEach(f => {
+    const el = document.createElement('div');
+    el.className = 'food-item'; el.id = 'food-'+f.id;
+    el.innerHTML = `<span class="size-badge">${f.portion}</span><span class="food-emoji">${f.emoji}</span><div class="food-name">${f.name}</div><div class="food-price">฿${f.price}</div>`;
+    el.onclick = () => selectFood(f);
+    fg.appendChild(el);
+  });
+  newFoodRound();
+}
+
+function newFoodRound() {
+  const ct = CUST_TYPES[Math.floor(Math.random()*CUST_TYPES.length)];
+  const drink = DRINKS.filter(d=>d.cat===ct.wantDrink);
+  const food = FOODS.filter(f=>f.cat===ct.wantFood);
+  // Assign a portion profile — weighted toward normal
+  const profile = PORTION_PROFILES[Math.floor(Math.random()*PORTION_PROFILES.length)];
+  G.currentFoodOrder = {
+    customer: ct,
+    wantDrink: ct.wantDrink,
+    wantFood: ct.wantFood,
+    correctDrink: drink[Math.floor(Math.random()*drink.length)] || DRINKS[0],
+    correctFood: food[Math.floor(Math.random()*food.length)] || FOODS[0],
+    profile,
+  };
+  G.foodSelected = null; G.drinkSelected = null;
+  G.portionSelected = null; G.drinkSizeSelected = null;
+  // Reset UI
+  document.querySelectorAll('.food-item').forEach(el => el.className = 'food-item');
+  document.getElementById('sel-drink').textContent = '—';
+  document.getElementById('sel-drink-name').textContent = '';
+  document.getElementById('sel-food').textContent = '—';
+  document.getElementById('sel-food-name').textContent = '';
+  document.getElementById('food-submit-btn').disabled = true;
+  // Render order card with portion hint
+  const area = document.getElementById('food-order-area');
+  const hints = {coffee:'☕ ชอบกาแฟ', cold:'🧊 เครื่องดื่มเย็น', special:'✨ เมนูพิเศษ', light:'🥐 อาหารเบา', cake:'🍰 ของหวาน', snack:'🍬 ของกินเล่น', heavy:'🥞 อาหารหนัก'};
+  // Find matching combos for hint
+  const possibleCombos = COMBOS.filter(c=>c.drinkCat===ct.wantDrink && c.foodCat===ct.wantFood);
+  const comboHint = possibleCombos.length ? `<div class="combo-hint">🌟 Combo: ${possibleCombos[0].label} +฿${possibleCombos[0].bonus}</div>` : '';
+  area.innerHTML = `
+    <div class="order-card pop-in">
+      <span class="order-table-emoji">${ct.group==='couple'?ct.emoji+CUST_TYPES[Math.floor(Math.random()*3)].emoji:ct.emoji}</span>
+      <div class="text-base font-bold mb-1" style="color:var(--cara)">${ct.name}</div>
+      <div class="text-xs opacity-60 mb-2">${ct.group==='couple'?'มาเป็นคู่':'มาคนเดียว'}</div>
+      <div class="flex gap-2 justify-center flex-wrap mb-2">
+        <span class="chip-y">${hints[ct.wantDrink]||ct.wantDrink}</span>
+        <span class="chip-y">${hints[ct.wantFood]||ct.wantFood}</span>
+      </div>
+      <div class="portion-hint-badge">${profile.label} <span style="opacity:.7;font-size:10px">— ${profile.hint}</span></div>
+      ${comboHint}
+    </div>`;
+}
+
+function selectDrink(d) {
+  G.drinkSelected = d;
+  document.querySelectorAll('[id^="drink-"]').forEach(el => el.classList.remove('selected'));
+  document.getElementById('drink-'+d.id).classList.add('selected');
+  document.getElementById('sel-drink').textContent = d.emoji;
+  document.getElementById('sel-drink-name').textContent = d.name;
+  checkCanSubmit();
+}
+
+function selectFood(f) {
+  G.foodSelected = f;
+  document.querySelectorAll('[id^="food-"]').forEach(el => el.classList.remove('selected'));
+  document.getElementById('food-'+f.id).classList.add('selected');
+  document.getElementById('sel-food').textContent = f.emoji;
+  document.getElementById('sel-food-name').textContent = f.name;
+  checkCanSubmit();
+}
+
+function checkCanSubmit() {
+  document.getElementById('food-submit-btn').disabled = !(G.foodSelected && G.drinkSelected);
+}
+
+function submitOrder() {
+  const o = G.currentFoodOrder;
+  if(!o || !G.foodSelected || !G.drinkSelected) return;
+  const drinkOK = G.drinkSelected.cat === o.wantDrink;
+  const foodOK = G.foodSelected.cat === o.wantFood;
+  const bothOK = drinkOK && foodOK;
+  const drinkEl = document.getElementById('drink-'+G.drinkSelected.id);
+  const foodEl = document.getElementById('food-'+G.foodSelected.id);
+
+  if(drinkOK) drinkEl?.classList.add('correct'); else drinkEl?.classList.add('wrong');
+  if(foodOK) foodEl?.classList.add('correct'); else foodEl?.classList.add('wrong');
+
+  const price = G.drinkSelected.price + G.foodSelected.price;
+  const cost = G.drinkSelected.cost + G.foodSelected.cost;
+
+  // Check portion match
+  const profile = o.profile;
+  const portionMatch = G.foodSelected.portion === profile.wantPortion;
+  const drinkSizeMatch = G.drinkSelected.size === profile.wantDrink;
+  const portionBonus = (portionMatch && drinkSizeMatch) ? profile.bonus : portionMatch||drinkSizeMatch ? Math.round(profile.bonus*0.5) : 0;
+
+  // Check combo
+  const comboMatch = COMBOS.find(c=>c.drinkCat===G.drinkSelected.cat && c.foodCat===G.foodSelected.cat);
+  const comboBonus = (bothOK && comboMatch) ? comboMatch.bonus : 0;
+
+  const totalBonus = portionBonus + comboBonus + (bothOK ? 20 : 0);
+
+  let bonusLines = [];
+  if(portionMatch && drinkSizeMatch) bonusLines.push(`✅ ปริมาณพอดี +฿${profile.bonus}`);
+  else if(portionMatch||drinkSizeMatch) bonusLines.push(`🟡 ปริมาณใกล้เคียง +฿${Math.round(profile.bonus*0.5)}`);
+  else bonusLines.push(`❌ ปริมาณไม่ตรง (${profile.label})`);
+  if(comboMatch && bothOK) bonusLines.push(`🌟 ${comboMatch.label} +฿${comboBonus}`);
+
+  if(bothOK) {
+    const profit = price - cost + totalBonus;
+    G.income += price; G.expenses += cost; G.money += profit;
+    G.correctOrders++; G.foodScore += 10 + (portionMatch?5:0) + (comboMatch?5:0);
+    G.rep = Math.min(100, G.rep+2);
+    showResult('🎉', 'ถูกต้อง!',
+      `${o.customer.name} ดีใจมาก!\n${bonusLines.join('\n')}\nกำไรรวม +฿${profit}`, false);
+    toast(`✅ ถูก! +฿${profit}${comboMatch?' 🌟':''}`, 'good');
+    log(`จัดเมนูถูก${comboMatch?' ['+comboMatch.label+']':''}: ${G.drinkSelected.name}+${G.foodSelected.name} +฿${profit}`, 'good');
+  } else if(drinkOK || foodOK) {
+    const loss = -cost;
+    G.expenses += cost; G.money += loss; G.wrongOrders++;
+    G.rep = Math.max(0, G.rep-1);
+    const wrong = !drinkOK ? `เครื่องดื่มผิด (ต้องการ: ${o.wantDrink})` : `อาหารผิด (ต้องการ: ${o.wantFood})`;
+    showResult('😕', 'ใกล้แล้ว...', `${wrong}\n${bonusLines[0]}\nลูกค้าไม่ค่อยพอใจ\nขาดทุน ฿${Math.abs(loss)}`, true);
+    toast(`⚠️ ผิดบางส่วน ขาดทุน ฿${Math.abs(loss)}`, 'bad');
+    log(`จัดเมนูผิดบางส่วน ขาดทุน ฿${Math.abs(loss)}`, 'bad');
+  } else {
+    const loss = -(cost + 50);
+    G.expenses += cost+50; G.money += loss; G.wrongOrders++;
+    G.rep = Math.max(0, G.rep-3);
+    showResult('💸', 'ผิดทั้งคู่!', `ลูกค้าโกรธมาก!\nเครื่องดื่มและอาหารไม่ตรงเลย\nขาดทุน ฿${Math.abs(loss)} (รวมค่าชดเชย)`, true);
+    toast(`😱 ผิดทั้งหมด! ขาดทุน ฿${Math.abs(loss)}`, 'bad');
+    log(`จัดเมนูผิดทั้งหมด ขาดทุน ฿${Math.abs(loss)}`, 'bad');
+  }
+  updateUI();
+}
+
+function skipOrder() {
+  if(G.money < 50) { toast('เงินไม่พอข้าม!','bad'); return; }
+  G.money -= 50; G.expenses += 50;
+  log('ข้ามออเดอร์ -฿50','bad');
+  toast('⏭️ ข้ามออเดอร์ -฿50','bad');
+  updateUI(); newFoodRound();
+}
+
+// ══════════════════════════════
+// END DAY
+// ══════════════════════════════
+function endDay() {
+  const fixed = 600;
+  const net = G.income - G.expenses - fixed;
+  G.money -= fixed;
+  const emoji = net>500?'🎉':net>0?'✅':net>-300?'😟':'😱';
+  const msg = `รายได้: ฿${G.income}\nค่าใช้จ่าย: ฿${G.expenses}\nค่าคงที่: ฿${fixed}\n──────────\nกำไรสุทธิ: ${net>=0?'+':''}฿${net}\nเงินคงเหลือ: ฿${G.money}`;
+  showResult(emoji, `สรุปวันที่ ${G.day}`, msg, net<0);
+  G.day++; G.income=0; G.expenses=0; G.custsServed=0;
+  G.supply=Math.max(0,G.supply-10);
+  // Clear tables
+  G.tables.forEach(t=>{t.customer=null;t.state='empty'});
+  G.queue=[];
+  renderFloor(); updateUI();
+  log(`═══ สิ้นสุดวันที่ ${G.day-1} กำไร ${net>=0?'+':''}฿${net} ═══`, net>=0?'good':'bad');
+}
+
+// ══════════════════════════════
+// AI
+// ══════════════════════════════
+async function triggerEvent() {
+  const btn=document.getElementById('ev-btn');
+  btn.disabled=true; btn.textContent='⏳';
+  const box=document.getElementById('ev-box');
+  box.innerHTML='<span class="loading-dots" style="color:var(--cara)">กำลังสร้าง<span>.</span><span>.</span><span>.</span></span>';
+  const ctx=`วันที่${G.day} เงิน฿${G.money} ชื่อเสียง${Math.round(G.rep)} วัตถุดิบ${G.supply}%`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:180,messages:[{role:'user',content:`เป็น AI เกมร้านกาแฟ สร้างเหตุการณ์สุ่ม 2 ประโยคภาษาไทย มีทั้งดีและร้าย บริบท:${ctx}`}]})});
+    const d=await r.json();
+    const txt=d.content?.[0]?.text||'วันนี้ไม่มีอะไรพิเศษ';
+    box.textContent=txt;
+    if(txt.includes('+เงิน')||txt.includes('โบนัส')){const b=Math.floor(Math.random()*200)+100;G.money+=b;G.income+=b;toast(`💰 +฿${b}`,'gold');}
+    if(txt.includes('ค่าปรับ')||txt.includes('ตรวจ')){const f=Math.floor(Math.random()*200)+100;G.money-=f;G.expenses+=f;toast(`🚨 ค่าปรับ -฿${f}`,'bad');}
+    if(txt.includes('+ชื่อเสียง')||txt.includes('รีวิว')){G.rep=Math.min(100,G.rep+8);toast('⭐ ชื่อเสียง +8','good');}
+    if(txt.includes('-ชื่อเสียง')||txt.includes('ร้องเรียน')){G.rep=Math.max(0,G.rep-8);toast('💔 ชื่อเสียง -8','bad');}
+    updateUI();
+  }catch(e){box.textContent='🌧️ ฝนตก ลูกค้าน้อยลงหน่อย';}
+  btn.disabled=false; btn.textContent='✨ สุ่ม';
+}
+
+async function askAI() {
+  const q=document.getElementById('ai-q').value.trim();
+  if(!q)return;
+  const out=document.getElementById('ai-out');
+  out.innerHTML='<span class="loading-dots" style="color:var(--cara)">กำลังคิด<span>.</span><span>.</span><span>.</span></span>';
+  const s=`เงิน฿${G.money} ชื่อเสียง${Math.round(G.rep)} วัตถุดิบ${G.supply}%`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:`ที่ปรึกษาร้านกาแฟในเกม ตอบภาษาไทย ไม่เกิน 3 ประโยค สถานะ:${s} คำถาม:${q}`}]})});
+    const d=await r.json();
+    out.textContent=d.content?.[0]?.text||'ลองถามใหม่ครับ';
+  }catch(e){out.textContent='แนะนำให้จัดเมนูให้ตรงกับความต้องการลูกค้าครับ ช่วยเพิ่มกำไรได้มาก';}
+  document.getElementById('ai-q').value='';
+}
+
+init();
+</script>
+</body>
+</html>
